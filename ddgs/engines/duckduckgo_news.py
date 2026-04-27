@@ -30,7 +30,7 @@ class DuckduckgoNews(BaseSearchEngine[NewsResult]):
 
     def _get_vqd(self, query: str) -> str:
         """Get vqd value for a search query using DuckDuckGo."""
-        resp_content = self.http_client.request("GET", "https://duckduckgo.com", params={"q": query}).content
+        resp_content = self._raw_request("GET", "https://duckduckgo.com", params={"q": query}).content
         return _extract_vqd(resp_content, query)
 
     def build_payload(

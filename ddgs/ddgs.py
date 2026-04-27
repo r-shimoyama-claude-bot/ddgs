@@ -21,8 +21,10 @@ from .base import BaseSearchEngine
 from .engines import ENGINES
 from .exceptions import DDGSException, TimeoutException
 from .http_client import HttpClient
+from .proxy import ProxyRotator, set_proxy_rotator
 from .results import ResultsAggregator
 from .similarity import SimpleFilterRanker
+from .throttle import _throttle
 from .utils import _expand_proxy_tb_alias
 
 logger = logging.getLogger(__name__)
@@ -130,6 +132,8 @@ class DDGS:
 
     Attributes:
         threads: The maximum number of threads per search. Defaults to None (automatic, based on max_results).
+        throttle_interval: Minimum seconds between requests to the same provider. Defaults to None (disabled).
+        throttle_jitter: Fraction of throttle_interval to add as random variation (e.g. 0.3 for ±30%).
 
     Raises:
         DDGSException: If an error occurs during the search.
@@ -141,19 +145,25 @@ class DDGS:
     """
 
     threads: ClassVar[int | None] = None
+    throttle_interval: ClassVar[float | None] = None
+    throttle_jitter: ClassVar[float | None] = None
     _network_client: ClassVar[Any] = None
     _api_process: ClassVar[subprocess.Popen[str] | None] = None
 
     def __init__(
         self,
-        proxy: str | None = None,
+        proxy: str | list[str] | None = None,
         timeout: int | None = 5,
         *,
         verify: bool | str = True,
         api_url: str | None = None,
         spawn_api: bool = False,
     ) -> None:
-        self._proxy = _expand_proxy_tb_alias(proxy) or os.environ.get("DDGS_PROXY")
+        if isinstance(proxy, list):
+            self._proxies: list[str | None] = [_expand_proxy_tb_alias(p) for p in proxy]
+        else:
+            expanded = _expand_proxy_tb_alias(proxy) or os.environ.get("DDGS_PROXY")
+            self._proxies = [expanded]
         self._timeout = timeout
         self._verify = verify
         self._api_url = api_url
@@ -323,7 +333,7 @@ class DDGS:
                     instances.append(self._engines_cache[engine_class])
                 # If not cached, create a new instance
                 else:
-                    engine_instance = engine_class(proxy=self._proxy, timeout=self._timeout, verify=self._verify)
+                    engine_instance = engine_class(proxy=self._proxies[0], timeout=self._timeout, verify=self._verify)
                     self._engines_cache[engine_class] = engine_instance
                     instances.append(engine_instance)
 
@@ -339,7 +349,7 @@ class DDGS:
         else:
             return instances
 
-    def _search_sync(  # noqa: C901, PLR0912
+    def _search_sync(  # noqa: C901, PLR0912, PLR0915
         self,
         category: str,
         query: str,
@@ -390,6 +400,9 @@ class DDGS:
                 logger.debug("Cache check failed: %r", ex)
 
         engines = self._get_engines(category, backend)
+        _throttle.min_interval = DDGS.throttle_interval if DDGS.throttle_interval is not None else 0
+        _throttle.jitter = DDGS.throttle_jitter if DDGS.throttle_jitter is not None else 0
+        set_proxy_rotator(ProxyRotator(self._proxies) if len(self._proxies) > 1 else None)
         len_unique_providers = len({engine.provider for engine in engines})
         seen_providers: set[str] = set()
 
@@ -475,7 +488,7 @@ class DDGS:
             A dictionary with 'url' and 'content' keys.
 
         """
-        client = HttpClient(proxy=self._proxy, timeout=self._timeout, verify=self._verify)
+        client = HttpClient(proxy=self._proxies[0], timeout=self._timeout, verify=self._verify)
         resp = client.get(url)
         if resp.status_code != 200:
             msg = f"Failed to fetch {url}: HTTP {resp.status_code}"

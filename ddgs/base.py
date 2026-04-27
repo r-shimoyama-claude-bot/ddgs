@@ -10,7 +10,9 @@ from lxml import html
 from lxml.etree import HTMLParser as LHTMLParser
 
 from .http_client import HttpClient
+from .proxy import _proxy_rotator
 from .results import BooksResult, ImagesResult, NewsResult, TextResult, VideosResult
+from .throttle import _throttle
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -34,7 +36,7 @@ class BaseSearchEngine(ABC, Generic[T]):
 
     def __init__(self, proxy: str | None = None, timeout: int | None = None, *, verify: bool | str = True) -> None:
         self.http_client = HttpClient(proxy=proxy, timeout=timeout, verify=verify)
-        self.http_client.client.headers_update(self.headers_update)
+        self.http_client.update_headers(self.headers_update)
         self.results: list[T] = []
 
     @property
@@ -63,11 +65,21 @@ class BaseSearchEngine(ABC, Generic[T]):
         raise NotImplementedError
 
     def request(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-        """Make a request to the search engine."""
+        """Make a throttled request to the search engine."""
+        if _proxy_rotator is not None:
+            self.http_client.set_proxy(_proxy_rotator.next())
+        _throttle.acquire(self.provider)
         resp = self.http_client.request(*args, **kwargs)
         if resp.status_code == 200:
             return resp.text
         return None
+
+    def _raw_request(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+        """Make a throttled raw request, returning the Response object."""
+        if _proxy_rotator is not None:
+            self.http_client.set_proxy(_proxy_rotator.next())
+        _throttle.acquire(self.provider)
+        return self.http_client.request(*args, **kwargs)
 
     @cached_property
     def parser(self) -> LHTMLParser:

@@ -1,6 +1,7 @@
 """HTTP client."""
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import primp
@@ -38,26 +39,59 @@ class Response:
 
 
 class HttpClient:
-    """HTTP client."""
+    """HTTP client with proxy rotation support."""
 
     def __init__(self, proxy: str | None = None, timeout: int | None = 10, *, verify: bool | str = True) -> None:
         """Initialize the HttpClient object.
 
         Args:
-            proxy (str, optional): proxy for the HTTP client, supports http/https/socks5 protocols.
+            proxy: proxy for the HTTP client, supports http/https/socks5 protocols.
                 example: "http://user:pass@example.com:3128". Defaults to None.
-            timeout (int, optional): Timeout value for the HTTP client. Defaults to 10.
-            verify: (bool | str):  True to verify, False to skip, or a str path to a PEM file. Defaults to True.
+            timeout: Timeout value for the HTTP client. Defaults to 10.
+            verify: True to verify, False to skip, or a str path to a PEM file. Defaults to True.
 
         """
-        self.client = primp.Client(
+        self._timeout = timeout
+        self._verify = verify
+        self._custom_headers: dict[str, str] = {}
+        self.client = self._build_client(proxy)
+
+    def _build_client(self, proxy: str | None) -> primp.Client:
+        """Build a primp.Client with the given proxy and stored settings."""
+        client = primp.Client(
             proxy=proxy,
-            timeout=timeout,
+            timeout=self._timeout,
             impersonate="random",
             impersonate_os="random",
-            verify=verify if isinstance(verify, bool) else True,
-            ca_cert_file=verify if isinstance(verify, str) else None,
+            verify=self._verify if isinstance(self._verify, bool) else True,
+            ca_cert_file=self._verify if isinstance(self._verify, str) else None,
         )
+        if self._custom_headers:
+            client.headers_update(self._custom_headers)
+        return client
+
+    def set_proxy(self, proxy: str | None) -> None:
+        """Switch to a different proxy by rebuilding the underlying client.
+
+        Custom headers are preserved.
+
+        Args:
+            proxy: The new proxy URL, or None for no proxy.
+
+        """
+        self.client = self._build_client(proxy)
+
+    def update_headers(self, headers: Mapping[str, str]) -> None:
+        """Update HTTP headers on the underlying client.
+
+        Headers are stored internally so they persist across proxy changes.
+
+        Args:
+            headers: Mapping of header names to values.
+
+        """
+        self._custom_headers.update(headers)
+        self.client.headers_update(headers)
 
     def request(self, *args: Any, **kwargs: Any) -> Response:  # noqa: ANN401
         """Make a request to the HTTP client."""
