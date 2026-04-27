@@ -22,6 +22,9 @@ COPY . .
 # Install Python dependencies (including API dependencies)
 RUN pip install --no-cache-dir -e .[api]
 
+# Install Playwright Chromium browser with system dependencies
+RUN playwright install chromium --with-deps
+
 # Expose port
 EXPOSE 8000
 

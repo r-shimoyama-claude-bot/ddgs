@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from random import SystemRandom
 from typing import Any, ClassVar
+from urllib.parse import urlencode
 
 from ddgs.base import BaseSearchEngine
 from ddgs.results import TextResult
@@ -33,7 +34,7 @@ def get_ua() -> str:
 class Google(BaseSearchEngine[TextResult]):
     """Google search engine."""
 
-    disabled = True  # !!!
+    disabled = False
 
     name = "google"
     category = "text"
@@ -75,6 +76,43 @@ class Google(BaseSearchEngine[TextResult]):
         if timelimit:
             payload["tbs"] = f"qdr:{timelimit}"
         return payload
+
+    def search(
+        self,
+        query: str,
+        region: str = "us-en",
+        safesearch: str = "moderate",
+        timelimit: str | None = None,
+        page: int = 1,
+        **kwargs: str,
+    ) -> list[TextResult] | None:
+        """Search Google using Playwright for JS rendering."""
+        from ddgs.browser import _browser_manager  # noqa: PLC0415
+        from ddgs.proxy import _proxy_rotator  # noqa: PLC0415
+        from ddgs.throttle import _throttle  # noqa: PLC0415
+
+        payload = self.build_payload(
+            query=query, region=region, safesearch=safesearch, timelimit=timelimit, page=page, **kwargs
+        )
+        _throttle.acquire(self.provider)
+
+        proxy: str | None = None
+        if _proxy_rotator is not None:
+            proxy = _proxy_rotator.next()
+
+        url = f"{self.search_url}?{urlencode(payload)}"
+        html_text = _browser_manager.fetch_html(
+            url,
+            proxy=proxy,
+            user_agent=self.headers_update.get("User-Agent"),
+            cookies={"CONSENT": "YES+"},
+            cookie_domain=".google.com",
+            timeout_ms=(self.http_client._timeout or 10) * 1000,
+        )
+        if not html_text:
+            return None
+        results = self.extract_results(html_text)
+        return self.post_extract_results(results)
 
     def post_extract_results(self, results: list[TextResult]) -> list[TextResult]:
         """Post-process search results."""
