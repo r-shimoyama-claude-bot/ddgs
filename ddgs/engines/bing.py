@@ -2,9 +2,12 @@
 
 import base64
 from collections.abc import Mapping
+from functools import cached_property
 from time import time
 from typing import Any, ClassVar
 from urllib.parse import parse_qs, urlparse
+
+from lxml.etree import HTMLParser as LHTMLParser
 
 from ddgs.base import BaseSearchEngine
 from ddgs.results import TextResult
@@ -31,7 +34,7 @@ def unwrap_bing_url(raw_url: str) -> str | None:
 class Bing(BaseSearchEngine[TextResult]):
     """Bing search engine."""
 
-    disabled = True  # !!!
+    disabled = False
 
     name = "bing"
     category = "text"
@@ -44,8 +47,13 @@ class Bing(BaseSearchEngine[TextResult]):
     elements_xpath: ClassVar[Mapping[str, str]] = {
         "title": ".//h2/a//text()",
         "href": ".//h2/a/@href",
-        "body": ".//p//text()",
+        "body": ".//div[contains(@class,'b_caption')]//p//text()",
     }
+
+    @cached_property
+    def parser(self) -> LHTMLParser:
+        """Get HTML parser without blank-text removal to preserve inline elements."""
+        return LHTMLParser(remove_comments=True, remove_pis=True, collect_ids=False)
 
     def build_payload(
         self,
