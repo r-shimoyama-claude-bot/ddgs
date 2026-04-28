@@ -18,6 +18,8 @@ def extract_url(u: str) -> str:
 class Yahoo(BaseSearchEngine[TextResult]):
     """Yahoo search engine."""
 
+    disabled = True
+
     name = "yahoo"
     category = "text"
     provider = "bing"

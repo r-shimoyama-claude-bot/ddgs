@@ -101,6 +101,7 @@ class Google(BaseSearchEngine[TextResult]):
             proxy = _proxy_rotator.next()
 
         url = f"{self.search_url}?{urlencode(payload)}"
+        country, lang = region.split("-")
         html_text = _browser_manager.fetch_html(
             url,
             proxy=proxy,
@@ -108,6 +109,7 @@ class Google(BaseSearchEngine[TextResult]):
             cookies={"CONSENT": "YES+"},
             cookie_domain=".google.com",
             timeout_ms=(self.http_client._timeout or 10) * 1000,
+            locale=f"{lang}-{country.upper()}",
         )
         if not html_text:
             return None

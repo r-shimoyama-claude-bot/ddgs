@@ -40,6 +40,11 @@ _network_lock = threading.Lock()
 _async_loop: asyncio.AbstractEventLoop | None = None
 _async_thread: threading.Thread | None = None
 
+# Round-robin state for text category
+_text_rotation: list[str] = ["google", "bing", "brave", "duckduckgo"]
+_text_rotation_index: int = 0
+_text_rotation_lock = threading.Lock()
+
 
 def _cleanup_api_process() -> None:
     """Cleanup any spawned API server process on exit."""
@@ -145,8 +150,8 @@ class DDGS:
     """
 
     threads: ClassVar[int | None] = None
-    throttle_interval: ClassVar[float | None] = None
-    throttle_jitter: ClassVar[float | None] = None
+    throttle_interval: ClassVar[float] = 3.0
+    throttle_jitter: ClassVar[float] = 0.3
     _network_client: ClassVar[Any] = None
     _api_process: ClassVar[subprocess.Popen[str] | None] = None
 
@@ -316,12 +321,7 @@ class DDGS:
         backend_list = [x.strip() for x in backend.split(",")]
         engine_keys = list(ENGINES[category].keys())
         shuffle(engine_keys)
-        if "auto" in backend_list or "all" in backend_list:
-            keys = engine_keys
-            if category == "text":
-                keys = ["wikipedia", "grokipedia"] + [k for k in keys if k not in ("wikipedia", "grokipedia")]
-        else:
-            keys = backend_list
+        keys = engine_keys if "auto" in backend_list or "all" in backend_list else backend_list
 
         try:
             engine_classes = [ENGINES[category][key] for key in keys]
@@ -399,9 +399,16 @@ class DDGS:
                 # Any cache failure, proceed normally to search
                 logger.debug("Cache check failed: %r", ex)
 
+        # Round-robin for text category with auto backend
+        if category == "text" and backend == "auto":
+            return self._search_sync_round_robin(
+                query, region=region, safesearch=safesearch,
+                timelimit=timelimit, max_results=max_results, page=page, **kwargs,
+            )
+
         engines = self._get_engines(category, backend)
-        _throttle.min_interval = DDGS.throttle_interval if DDGS.throttle_interval is not None else 0
-        _throttle.jitter = DDGS.throttle_jitter if DDGS.throttle_jitter is not None else 0
+        _throttle.min_interval = DDGS.throttle_interval
+        _throttle.jitter = DDGS.throttle_jitter
         set_proxy_rotator(ProxyRotator(self._proxies) if len(self._proxies) > 1 else None)
         len_unique_providers = len({engine.provider for engine in engines})
         seen_providers: set[str] = set()
@@ -460,6 +467,73 @@ class DDGS:
     def text(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
         """Perform a text search."""
         return self._search_sync("text", query, **kwargs)
+
+    def _search_sync_round_robin(
+        self,
+        query: str,
+        *,
+        region: str = "us-en",
+        safesearch: str = "moderate",
+        timelimit: str | None = None,
+        max_results: int | None = 10,
+        page: int = 1,
+        **kwargs: str,
+    ) -> list[dict[str, Any]]:
+        """Perform a text search using round-robin engine rotation."""
+        global _text_rotation_index  # noqa: PLW0603
+        _throttle.min_interval = DDGS.throttle_interval
+        _throttle.jitter = DDGS.throttle_jitter
+        set_proxy_rotator(ProxyRotator(self._proxies) if len(self._proxies) > 1 else None)
+
+        num_engines = len(_text_rotation)
+        errors: list[str] = []
+
+        with _text_rotation_lock:
+            start_index = _text_rotation_index
+            _text_rotation_index = (_text_rotation_index + 1) % num_engines
+
+        network = self._get_network_client()
+
+        for attempt in range(num_engines):
+            idx = (start_index + attempt) % num_engines
+            engine_name = _text_rotation[idx]
+
+            if engine_name not in ENGINES.get("text", {}):
+                errors.append(f"{engine_name}: not available")
+                continue
+
+            engine_class = ENGINES["text"][engine_name]
+            if engine_class in self._engines_cache:
+                engine = self._engines_cache[engine_class]
+            else:
+                engine = engine_class(proxy=self._proxies[0], timeout=self._timeout, verify=self._verify)
+                self._engines_cache[engine_class] = engine
+
+            try:
+                logger.debug("Round-robin text: trying %s (attempt %d/%d)", engine_name, attempt + 1, num_engines)
+                results = engine.search(
+                    query, region=region, safesearch=safesearch,
+                    timelimit=timelimit, page=page, **kwargs,
+                )
+                if results:
+                    dicts = [r.__dict__ for r in results]
+                    ranker = SimpleFilterRanker()
+                    ranked = ranker.rank(dicts, query)
+                    if ranked:
+                        if network:
+                            self._cache_results_async(query, ranked, "text")
+                        return ranked[:max_results] if max_results else ranked
+
+                errors.append(f"{engine_name}: no results")
+                logger.info("Round-robin: %s returned no results, trying next", engine_name)
+            except Exception as ex:  # noqa: BLE001
+                errors.append(f"{engine_name}: {ex!r}")
+                logger.info("Round-robin: %s failed with %r, trying next", engine_name, ex)
+
+        combined = "; ".join(errors)
+        if any("timed out" in e for e in errors):
+            raise TimeoutException(combined)
+        raise DDGSException(combined or "No results found from any text engine.")
 
     def images(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
         """Perform an image search."""

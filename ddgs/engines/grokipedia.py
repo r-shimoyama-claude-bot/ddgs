@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 class Grokipedia(BaseSearchEngine[TextResult]):
     """Grokipedia text search engine."""
 
+    disabled = True
+
     name = "grokipedia"
     category = "text"
     provider = "grokipedia"

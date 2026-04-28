@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 class Wikipedia(BaseSearchEngine[TextResult]):
     """Wikipedia text search engine."""
 
+    disabled = True
+
     name = "wikipedia"
     category = "text"
     provider = "wikipedia"

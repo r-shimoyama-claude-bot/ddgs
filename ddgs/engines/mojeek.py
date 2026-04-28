@@ -10,6 +10,8 @@ from ddgs.results import TextResult
 class Mojeek(BaseSearchEngine[TextResult]):
     """Mojeek search engine."""
 
+    disabled = True
+
     name = "mojeek"
     category = "text"
     provider = "mojeek"

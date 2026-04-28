@@ -13,6 +13,8 @@ random = SystemRandom()
 class Yandex(BaseSearchEngine[TextResult]):
     """Yandex search engine."""
 
+    disabled = True
+
     name = "yandex"
     category = "text"
     provider = "yandex"
