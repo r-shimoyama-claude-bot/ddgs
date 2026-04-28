@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 # Create MCP server with secure defaults
 mcp = FastMCP("ddgs-search")
 
+# Shared DDGS instance to reuse engine cache across calls
+_ddgs = DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY")))
+
 
 @mcp.tool()
 async def search_text(
@@ -42,7 +45,7 @@ async def search_text(
 
     """
     results = await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).text(
+        lambda: _ddgs.text(
             query=query,
             region=region,
             safesearch=safesearch,
@@ -91,7 +94,7 @@ async def search_images(
 
     """
     results = await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).images(
+        lambda: _ddgs.images(
             query=query,
             region=region,
             safesearch=safesearch,
@@ -135,7 +138,7 @@ async def search_news(
 
     """
     results = await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).news(
+        lambda: _ddgs.news(
             query=query,
             region=region,
             safesearch=safesearch,
@@ -180,7 +183,7 @@ async def search_videos(
 
     """
     results = await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).videos(
+        lambda: _ddgs.videos(
             query=query,
             region=region,
             safesearch=safesearch,
@@ -216,7 +219,7 @@ async def search_books(
 
     """
     results = await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).books(
+        lambda: _ddgs.books(
             query=query,
             max_results=max_results,
             page=page,
@@ -239,7 +242,7 @@ async def extract_content(url: str, fmt: str = "text_markdown") -> dict[str, str
 
     """
     return await asyncio.to_thread(
-        lambda: DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY"))).extract(
+        lambda: _ddgs.extract(
             url=url,
             fmt=fmt,
         )

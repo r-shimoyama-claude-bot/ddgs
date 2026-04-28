@@ -40,8 +40,8 @@ _network_lock = threading.Lock()
 _async_loop: asyncio.AbstractEventLoop | None = None
 _async_thread: threading.Thread | None = None
 
-# Round-robin state for text category
-_text_rotation: list[str] = ["google", "bing", "brave", "duckduckgo"]
+# Round-robin state for text category (Google excluded: Playwright is too heavy for MCP)
+_text_rotation: list[str] = ["bing", "brave", "duckduckgo"]
 _text_rotation_index: int = 0
 _text_rotation_lock = threading.Lock()
 
@@ -150,8 +150,8 @@ class DDGS:
     """
 
     threads: ClassVar[int | None] = None
-    throttle_interval: ClassVar[float] = 3.0
-    throttle_jitter: ClassVar[float] = 0.3
+    throttle_interval: ClassVar[float] = 1.0
+    throttle_jitter: ClassVar[float] = 0.2
     _network_client: ClassVar[Any] = None
     _api_process: ClassVar[subprocess.Popen[str] | None] = None
 
