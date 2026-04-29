@@ -91,5 +91,19 @@ class ProviderThrottle:
             else:
                 self._last_request.clear()
 
+    def cooldown(self, provider: str, duration: float) -> None:
+        """Block a provider for a specified duration from now.
+
+        Used when CAPTCHA (202) is detected to give the provider time to recover.
+
+        Args:
+            provider: The provider name to cooldown.
+            duration: Seconds to block this provider.
+
+        """
+        with self._lock:
+            self._last_request[provider] = time.monotonic() + duration
+        logger.info("Cooldown provider %s: %.1fs", provider, duration)
+
 
 _throttle = ProviderThrottle()

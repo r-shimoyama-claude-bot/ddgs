@@ -1,6 +1,7 @@
 """Base class for search engines."""
 
 import logging
+import os
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
