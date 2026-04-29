@@ -53,6 +53,7 @@ class HttpClient:
         """
         self._timeout = timeout
         self._verify = verify
+        self._proxy = proxy
         self._custom_headers: dict[str, str] = {}
         self.client = self._build_client(proxy)
 
@@ -79,7 +80,12 @@ class HttpClient:
             proxy: The new proxy URL, or None for no proxy.
 
         """
+        self._proxy = proxy
         self.client = self._build_client(proxy)
+
+    def reset_session(self) -> None:
+        """Reset the HTTP session to get fresh cookies and TLS state."""
+        self.client = self._build_client(self._proxy)
 
     def update_headers(self, headers: Mapping[str, str]) -> None:
         """Update HTTP headers on the underlying client.

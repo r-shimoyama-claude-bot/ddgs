@@ -231,11 +231,21 @@ ___
 
 | DDGS function | Available backends |
 | --------------|:-------------------|
-| text()        | `bing`, `brave`, `duckduckgo`, `google`, `grokipedia`, `mojeek`, `yandex`, `yahoo`, `wikipedia`|
+| text()        | `bing`, `brave`, `duckduckgo`, `duckduckgo_lite`, `google`, `grokipedia`, `mojeek`, `yandex`, `yahoo`, `wikipedia`|
 | images()      | `bing`, `duckduckgo` |
 | videos()      | `duckduckgo` |
 | news()        | `bing`, `duckduckgo`, `yahoo` |
 | books()       | `annasarchive` |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DDGS_THROTTLE` | `3.0` | Min seconds between requests to the same provider |
+| `DDGS_THROTTLE_JITTER` | `0.3` | Jitter fraction for throttle interval |
+| `DDGS_RETRY_DELAY` | `3.0` | Base delay (seconds) for retry on 429/202 |
+| `DDGS_MAX_RETRIES` | `3` | Max retries on rate-limit/CAPTCHA responses |
+| `DDGS_PROXY` | | Proxy URL (http/https/socks5) |
 
 [Go To TOP](#TOP)
 

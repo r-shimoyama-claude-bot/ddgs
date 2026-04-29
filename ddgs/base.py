@@ -68,8 +68,10 @@ class BaseSearchEngine(ABC, Generic[T]):
     _max_retries: ClassVar[int] = 2
     _retry_base_delay: ClassVar[float] = 1.0
 
+    _retryable_statuses: ClassVar[set[int]] = {429}
+
     def request(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-        """Make a throttled request with retry on HTTP 429."""
+        """Make a throttled request with retry on retryable status codes (429, 202)."""
         if _proxy_rotator is not None:
             self.http_client.set_proxy(_proxy_rotator.next())
         _throttle.acquire(self.provider)
@@ -77,27 +79,29 @@ class BaseSearchEngine(ABC, Generic[T]):
             resp = self.http_client.request(*args, **kwargs)
             if resp.status_code == 200:
                 return resp.text
-            if resp.status_code == 429 and attempt < self._max_retries:
+            if resp.status_code in self._retryable_statuses and attempt < self._max_retries:
                 delay = self._retry_base_delay * (2 ** attempt)
-                logger.info("HTTP 429 from %s, retrying in %.1fs (attempt %d/%d)",
-                            self.name, delay, attempt + 1, self._max_retries)
+                logger.info("HTTP %d from %s, retrying in %.1fs (attempt %d/%d)",
+                            resp.status_code, self.name, delay, attempt + 1, self._max_retries)
+                self.http_client.reset_session()
                 time.sleep(delay)
                 continue
             return None
         return None
 
     def _raw_request(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-        """Make a throttled raw request with retry on HTTP 429, returning the Response object."""
+        """Make a throttled raw request with retry on retryable status codes, returning the Response object."""
         if _proxy_rotator is not None:
             self.http_client.set_proxy(_proxy_rotator.next())
         _throttle.acquire(self.provider)
         for attempt in range(self._max_retries + 1):
             resp = self.http_client.request(*args, **kwargs)
-            if resp.status_code != 429 or attempt >= self._max_retries:
+            if resp.status_code not in self._retryable_statuses or attempt >= self._max_retries:
                 return resp
             delay = self._retry_base_delay * (2 ** attempt)
-            logger.info("HTTP 429 from %s (raw), retrying in %.1fs (attempt %d/%d)",
-                        self.name, delay, attempt + 1, self._max_retries)
+            logger.info("HTTP %d from %s (raw), retrying in %.1fs (attempt %d/%d)",
+                        resp.status_code, self.name, delay, attempt + 1, self._max_retries)
+            self.http_client.reset_session()
             time.sleep(delay)
         return resp
 
