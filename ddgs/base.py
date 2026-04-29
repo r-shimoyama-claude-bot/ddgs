@@ -137,6 +137,12 @@ class BaseSearchEngine(ABC, Generic[T]):
         """Post-process search results."""
         return results
 
+    @staticmethod
+    def _accept_language_for_region(region: str) -> str:
+        """Convert region (e.g., 'us-en') to Accept-Language header value."""
+        country, lang = region.lower().split("-")
+        return f"{lang}-{country.upper()},{lang};q=0.5"
+
     def search(
         self,
         query: str,

@@ -33,6 +33,19 @@ class DuckduckgoNews(BaseSearchEngine[NewsResult]):
         resp_content = self._raw_request("GET", "https://duckduckgo.com", params={"q": query}).content
         return _extract_vqd(resp_content, query)
 
+    def search(
+        self,
+        query: str,
+        region: str = "us-en",
+        safesearch: str = "moderate",
+        timelimit: str | None = None,
+        page: int = 1,
+        **kwargs: str,
+    ) -> list[NewsResult] | None:
+        """Search with Accept-Language header set from region."""
+        self.http_client.update_headers({"Accept-Language": self._accept_language_for_region(region)})
+        return super().search(query, region, safesearch, timelimit, page, **kwargs)
+
     def build_payload(
         self,
         query: str,

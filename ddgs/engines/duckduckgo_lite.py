@@ -40,6 +40,19 @@ class DuckduckgoLite(BaseSearchEngine[TextResult]):
             payload["df"] = timelimit
         return payload
 
+    def search(
+        self,
+        query: str,
+        region: str = "us-en",
+        safesearch: str = "moderate",
+        timelimit: str | None = None,
+        page: int = 1,
+        **kwargs: str,
+    ) -> list[TextResult] | None:
+        """Search with Accept-Language header set from region."""
+        self.http_client.update_headers({"Accept-Language": self._accept_language_for_region(region)})
+        return super().search(query, region, safesearch, timelimit, page, **kwargs)
+
     def extract_results(self, html_text: str) -> list[TextResult]:
         """Extract search results from lite HTML (table-based layout)."""
         tree = lxml_html.fromstring(html_text, parser=self.parser)

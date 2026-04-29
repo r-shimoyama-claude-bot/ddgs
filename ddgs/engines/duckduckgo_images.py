@@ -20,7 +20,6 @@ class DuckduckgoImages(BaseSearchEngine[ImagesResult]):
     search_method = "GET"
     headers_update: ClassVar[Mapping[str, str]] = {
         "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
         "Referer": "https://duckduckgo.com/",
         "Sec-GPC": "1",
         "Connection": "keep-alive",
@@ -43,6 +42,19 @@ class DuckduckgoImages(BaseSearchEngine[ImagesResult]):
         """Get vqd value for a search query using DuckDuckGo."""
         resp_content = self._raw_request("GET", "https://duckduckgo.com", params={"q": query}).content
         return _extract_vqd(resp_content, query)
+
+    def search(
+        self,
+        query: str,
+        region: str = "us-en",
+        safesearch: str = "moderate",
+        timelimit: str | None = None,
+        page: int = 1,
+        **kwargs: str,
+    ) -> list[ImagesResult] | None:
+        """Search with Accept-Language header set from region."""
+        self.http_client.update_headers({"Accept-Language": self._accept_language_for_region(region)})
+        return super().search(query, region, safesearch, timelimit, page, **kwargs)
 
     def build_payload(
         self,
