@@ -241,7 +241,7 @@ ___
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DDGS_THROTTLE` | `5.0` | Min seconds between requests to the same provider |
+| `DDGS_THROTTLE` | `3.5` | Min seconds between requests to the same provider |
 | `DDGS_THROTTLE_JITTER` | `0.3` | Jitter fraction for throttle interval |
 | `DDGS_RETRY_DELAY` | `3.0` | Base delay (seconds) for retry on 429/202 |
 | `DDGS_MAX_RETRIES` | `3` | Max retries on rate-limit/CAPTCHA responses |
