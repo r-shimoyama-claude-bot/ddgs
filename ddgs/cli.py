@@ -182,7 +182,7 @@ def version() -> str:
 @cli.command()
 @click.option("-q", "--query", help="text search query")
 @click.option("-k", "--keywords", help="(Deprecated) text search query")  # deprecated
-@click.option("-r", "--region", default="us-en", help="us-en, ru-ru, etc.")
+@click.option("-r", "--region", default="jp-ja", help="jp-ja, us-en, etc.")
 @click.option("-s", "--safesearch", default="moderate", type=click.Choice(["on", "moderate", "off"]))
 @click.option("-t", "--timelimit", type=click.Choice(["d", "w", "m", "y"]), help="day, week, month, year")
 @click.option("-m", "--max_results", default=10, type=int, help="maximum number of results")
@@ -260,7 +260,7 @@ def text(
 @cli.command()
 @click.option("-q", "--query", help="images search query")
 @click.option("-k", "--keywords", help="(Deprecated) images search query")  # deprecated
-@click.option("-r", "--region", default="us-en", help="us-en, ru-ru, etc.")
+@click.option("-r", "--region", default="jp-ja", help="jp-ja, us-en, etc.")
 @click.option("-s", "--safesearch", default="moderate", type=click.Choice(["on", "moderate", "off"]))
 @click.option("-t", "--timelimit", type=click.Choice(["d", "w", "m", "y"]))
 @click.option("-m", "--max_results", default=10, type=int, help="maximum number of results")
@@ -369,7 +369,7 @@ def images(
 @cli.command()
 @click.option("-q", "--query", help="videos search query")
 @click.option("-k", "--keywords", help="(Deprecated) videos search query")  # deprecated
-@click.option("-r", "--region", default="us-en", help="us-en, ru-ru, etc.")
+@click.option("-r", "--region", default="jp-ja", help="jp-ja, us-en, etc.")
 @click.option("-s", "--safesearch", default="moderate", type=click.Choice(["on", "moderate", "off"]))
 @click.option("-t", "--timelimit", type=click.Choice(["d", "w", "m"]), help="day, week, month")
 @click.option("-m", "--max_results", default=10, type=int, help="maximum number of results")
@@ -431,7 +431,7 @@ def videos(
 @cli.command()
 @click.option("-q", "--query", help="news search query")
 @click.option("-k", "--keywords", help="(Deprecated) news search query")  # deprecated
-@click.option("-r", "--region", default="us-en", help="us-en, ru-ru, etc.")
+@click.option("-r", "--region", default="jp-ja", help="jp-ja, us-en, etc.")
 @click.option("-s", "--safesearch", default="moderate", type=click.Choice(["on", "moderate", "off"]))
 @click.option("-t", "--timelimit", type=click.Choice(["d", "w", "m", "y"]), help="day, week, month, year")
 @click.option("-m", "--max_results", default=10, type=int, help="maximum number of results")

@@ -22,7 +22,7 @@ _ddgs = DDGS(proxy=_expand_proxy_tb_alias(os.environ.get("DDGS_PROXY")))
 @mcp.tool()
 async def search_text(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -61,7 +61,7 @@ async def search_text(
 @mcp.tool()
 async def search_images(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -115,7 +115,7 @@ async def search_images(
 @mcp.tool()
 async def search_news(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -154,7 +154,7 @@ async def search_news(
 @mcp.tool()
 async def search_videos(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,

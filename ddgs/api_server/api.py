@@ -46,7 +46,7 @@ class TextSearchRequest(BaseModel):
     """Request model for search operations."""
 
     query: str = Field(..., description="Search query")
-    region: str = Field("us-en", description="Region for search (e.g., us-en, uk-en, ru-ru)")
+    region: str = Field("jp-ja", description="Region for search (e.g., us-en, uk-en, ru-ru)")
     safesearch: str = Field("moderate", description="Safe search setting (on, moderate, off)")
     timelimit: str | None = Field(None, description="Time limit (d, w, m, y) or custom date range")
     max_results: int | None = Field(10, description="Maximum number of results to return")
@@ -58,7 +58,7 @@ class ImagesSearchRequest(BaseModel):
     """Request model for image search operations."""
 
     query: str = Field(..., description="Image search query")
-    region: str = Field("us-en", description="Region for search (e.g., us-en, uk-en, ru-ru)")
+    region: str = Field("jp-ja", description="Region for search (e.g., us-en, uk-en, ru-ru)")
     safesearch: str = Field("moderate", description="Safe search setting (on, moderate, off)")
     timelimit: str | None = Field(None, description="Time limit (d, w, m, y) or custom date range")
     max_results: int | None = Field(10, description="Maximum number of results to return")
@@ -80,7 +80,7 @@ class NewsSearchRequest(BaseModel):
     """Request model for search operations."""
 
     query: str = Field(..., description="Search query")
-    region: str = Field("us-en", description="Region for search (e.g., us-en, uk-en, ru-ru)")
+    region: str = Field("jp-ja", description="Region for search (e.g., us-en, uk-en, ru-ru)")
     safesearch: str = Field("moderate", description="Safe search setting (on, moderate, off)")
     timelimit: str | None = Field(None, description="Time limit (d, w, m, y) or custom date range")
     max_results: int | None = Field(10, description="Maximum number of results to return")
@@ -92,7 +92,7 @@ class VideosSearchRequest(BaseModel):
     """Request model for video search operations."""
 
     query: str = Field(..., description="Video search query")
-    region: str = Field("us-en", description="Region for search (e.g., us-en, uk-en, ru-ru)")
+    region: str = Field("jp-ja", description="Region for search (e.g., us-en, uk-en, ru-ru)")
     safesearch: str = Field("moderate", description="Safe search setting (on, moderate, off)")
     timelimit: str | None = Field(None, description="Time limit (d, w, m) or custom date range")
     max_results: int | None = Field(10, description="Maximum number of results to return")
@@ -170,7 +170,7 @@ async def search_text(request: TextSearchRequest) -> SearchResponse:
 @app.get("/search/text", response_model=SearchResponse)
 async def search_text_get(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -227,7 +227,7 @@ async def search_images(request: ImagesSearchRequest) -> SearchResponse:
 @app.get("/search/images", response_model=SearchResponse)
 async def search_images_get(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -289,7 +289,7 @@ async def search_news(request: NewsSearchRequest) -> SearchResponse:
 @app.get("/search/news", response_model=SearchResponse)
 async def search_news_get(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,
@@ -344,7 +344,7 @@ async def search_videos(request: VideosSearchRequest) -> SearchResponse:
 @app.get("/search/videos", response_model=SearchResponse)
 async def search_videos_get(
     query: str,
-    region: str = "us-en",
+    region: str = "jp-ja",
     safesearch: str = "moderate",
     timelimit: str | None = None,
     max_results: int = 10,

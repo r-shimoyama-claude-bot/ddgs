@@ -45,7 +45,7 @@ class Duckduckgo(BaseSearchEngine[TextResult]):
     def search(
         self,
         query: str,
-        region: str = "us-en",
+        region: str = "jp-ja",
         safesearch: str = "moderate",
         timelimit: str | None = None,
         page: int = 1,
