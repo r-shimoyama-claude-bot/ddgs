@@ -150,7 +150,7 @@ class DDGS:
     """
 
     threads: ClassVar[int | None] = None
-    throttle_interval: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE", "3.0"))
+    throttle_interval: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE", "2.0"))
     throttle_jitter: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE_JITTER", "0.3"))
     _network_client: ClassVar[Any] = None
     _api_process: ClassVar[subprocess.Popen[str] | None] = None
