@@ -41,7 +41,7 @@ _async_loop: asyncio.AbstractEventLoop | None = None
 _async_thread: threading.Thread | None = None
 
 # Round-robin state for text category (Google excluded: Playwright is too heavy for MCP)
-_text_rotation: list[str] = ["bing", "brave", "duckduckgo_lite"]
+_text_rotation: list[str] = ["bing", "duckduckgo_lite"]
 _text_rotation_index: int = 0
 _text_rotation_lock = threading.Lock()
 
@@ -150,7 +150,7 @@ class DDGS:
     """
 
     threads: ClassVar[int | None] = None
-    throttle_interval: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE", "0"))
+    throttle_interval: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE", "3.0"))
     throttle_jitter: ClassVar[float] = float(os.environ.get("DDGS_THROTTLE_JITTER", "0.3"))
     _network_client: ClassVar[Any] = None
     _api_process: ClassVar[subprocess.Popen[str] | None] = None
@@ -523,9 +523,14 @@ class DDGS:
                         if network:
                             self._cache_results_async(query, ranked, "text")
                         return ranked[:max_results] if max_results else ranked
+                    logger.info(
+                        "Round-robin: %s returned no results after ranking, trying next",
+                        engine_name,
+                    )
+                else:
+                    logger.info("Round-robin: %s returned no results, trying next", engine_name)
 
-                errors.append(f"{engine_name}: no results")
-                logger.info("Round-robin: %s returned no results, trying next", engine_name)
+                errors.append(f"{engine_name}: insufficient valid results")
             except Exception as ex:  # noqa: BLE001
                 errors.append(f"{engine_name}: {ex!r}")
                 logger.info("Round-robin: %s failed with %r, trying next", engine_name, ex)

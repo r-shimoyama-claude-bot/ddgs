@@ -66,7 +66,7 @@ class Bing(BaseSearchEngine[TextResult]):
     ) -> dict[str, Any]:
         """Build a payload for the Bing search request."""
         country, lang = region.lower().split("-")
-        payload = {"q": query, "pq": query, "cc": lang}
+        payload = {"q": query, "pq": query, "cc": country}
         cookies = {
             "_EDGE_CD": f"m={lang}-{country}&u={lang}-{country}",
             "_EDGE_S": f"mkt={lang}-{country}&ui={lang}-{country}",
