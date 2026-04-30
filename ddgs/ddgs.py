@@ -40,8 +40,8 @@ _network_lock = threading.Lock()
 _async_loop: asyncio.AbstractEventLoop | None = None
 _async_thread: threading.Thread | None = None
 
-# Round-robin state for text category (Google excluded: Playwright is too heavy for MCP)
-_text_rotation: list[str] = ["bing", "duckduckgo_lite"]
+# Text search engine (Bing excluded: HTML structure instability)
+_text_rotation: list[str] = ["duckduckgo_lite"]
 _text_rotation_index: int = 0
 _text_rotation_lock = threading.Lock()
 

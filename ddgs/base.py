@@ -79,6 +79,7 @@ class BaseSearchEngine(ABC, Generic[T]):
         for attempt in range(self._max_retries + 1):
             resp = self.http_client.request(*args, **kwargs)
             if resp.status_code == 200:
+                self.http_client.maybe_rotate_session()
                 return resp.text
             if resp.status_code in self._retryable_statuses and attempt < self._max_retries:
                 delay = self._retry_base_delay * (2 ** attempt)
@@ -98,6 +99,7 @@ class BaseSearchEngine(ABC, Generic[T]):
         for attempt in range(self._max_retries + 1):
             resp = self.http_client.request(*args, **kwargs)
             if resp.status_code not in self._retryable_statuses or attempt >= self._max_retries:
+                self.http_client.maybe_rotate_session()
                 return resp
             delay = self._retry_base_delay * (2 ** attempt)
             logger.info("HTTP %d from %s (raw), retrying in %.1fs (attempt %d/%d)",

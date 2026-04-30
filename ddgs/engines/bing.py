@@ -45,8 +45,8 @@ class Bing(BaseSearchEngine[TextResult]):
 
     items_xpath = "//li[contains(@class, 'b_algo')]"
     elements_xpath: ClassVar[Mapping[str, str]] = {
-        "title": ".//h2/a//text()",
-        "href": ".//h2/a/@href",
+        "title": ".//h2//text()",
+        "href": ".//h2/a/@href | .//a[h2]/@href",
         "body": ".//div[contains(@class,'b_caption')]//p//text()",
     }
 

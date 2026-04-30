@@ -1,6 +1,7 @@
 """HTTP client."""
 
 import logging
+import os
 from collections.abc import Mapping
 from typing import Any
 
@@ -9,6 +10,8 @@ import primp
 from .exceptions import DDGSException, TimeoutException
 
 logger = logging.getLogger(__name__)
+
+_SESSION_ROTATION_INTERVAL = int(os.environ.get("DDGS_SESSION_ROTATION_INTERVAL", "10"))
 
 
 class Response:
@@ -55,6 +58,7 @@ class HttpClient:
         self._verify = verify
         self._proxy = proxy
         self._custom_headers: dict[str, str] = {}
+        self._request_count = 0
         self.client = self._build_client(proxy)
 
     def _build_client(self, proxy: str | None) -> primp.Client:
@@ -86,6 +90,16 @@ class HttpClient:
     def reset_session(self) -> None:
         """Reset the HTTP session to get fresh cookies and TLS state."""
         self.client = self._build_client(self._proxy)
+
+    def maybe_rotate_session(self) -> None:
+        """Rotate session (new browser fingerprint) every N requests."""
+        if _SESSION_ROTATION_INTERVAL <= 0:
+            return
+        self._request_count += 1
+        if self._request_count >= _SESSION_ROTATION_INTERVAL:
+            self._request_count = 0
+            self.client = self._build_client(self._proxy)
+            logger.debug("Rotated HTTP session (new fingerprint)")
 
     def update_headers(self, headers: Mapping[str, str]) -> None:
         """Update HTTP headers on the underlying client.
